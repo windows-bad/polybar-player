@@ -21,31 +21,27 @@ artist_error="Unknown Artist"
 
 
 # dash has no arrays but i NEEED SPEEED
-# idk what this char "" is but it seems like a decent delimiter hahaha.
-# can type in vim insert mode with Ctrl-V Ctrl-L
-
-# The escaping of the sed command is a nightmare, be warned
 
 # format of the "array"
-# substring matchicon/namearbitrary sed command to run on titleoptions
+# substring match:icon/name:arbitrary sed command to run on title:options
 # currently options only matches "noartist"
 
 # The escaping of the sed command is a nightmare, be warned
 
 regex_url_mappings='
-.*youtube.*%{F#ff5555}%{F-}noartist
-.*twitch.*%{F#ffffff}%{F-}s/ - Twitch//
+.*youtube.*:%{F#ff5555}%{F-}::noartist
+.*twitch.*:%{F#ffffff}%{F-}:s/ - Twitch//:
 '
 
 regex_title_mappings="
-.* - Twitchs/ - Twitch//
+.* - Twitch::s/ - Twitch//:
 "
 
 regex_player_mappings="
-spotify%{F#50fa7b}%{F-}
-firefox
-chromiumBrave
-vlcVLC
+spotify:%{F#50fa7b}%{F-}::
+firefox:::
+chromium:Brave::
+vlc:VLC::
 "
 
 found_currently_playing=0
@@ -67,10 +63,10 @@ set_from_map() { # takes $1: map, $2 thing to match on
 	IFS="
 "
 	for map in $1; do
-		regex=$( echo $map | sed 's/^\(.*\)\(.*\)\(.*\)\(.*\)/\1/')
-		icon=$(  echo $map | sed 's/^\(.*\)\(.*\)\(.*\)\(.*\)/\2/')
-		sedcmd=$(echo $map | sed 's/^\(.*\)\(.*\)\(.*\)\(.*\)/\3/')
-		option=$(echo $map | sed 's/^\(.*\)\(.*\)\(.*\)\(.*\)/\4/')
+		regex=$( echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\1/')
+		icon=$(  echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\2/')
+		sedcmd=$(echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\3/')
+		option=$(echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\4/')
 		if echo $2 | egrep -q "$regex"; then
 			suffix=$icon
 			if ! [ "$sedcmd" = '' ]; then
@@ -108,11 +104,13 @@ do
 		if [ -f $HOME/.mozilla/firefox/*.default-release/sessionstore-backups/recovery.jsonlz4 ]
 		then
 			# Just trust in the black magic please
+			# Ignore jq stderr, as it sometimes encounters quoting issues from
+			# the firefox json. It will then fall back on the firefox logo.
 			url=$(lz4jsoncat $HOME/.mozilla/firefox/*.default-release/sessionstore-backups/recovery.jsonlz4 \
 				| jq "$(echo '.windows[] | .tabs[] | .entries[] ' \
 					'| select(.title != null) | select(.title ' \
 					'| contains("'"$(playerctl -p $player metadata title)"'")) ' \
-					'| .url')" \
+					'| .url')" 2>/dev/null \
 				| sed 's/^"//;s/"$//')
 		fi
 	fi
