@@ -16,6 +16,36 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+# Handle command line options
+
+## Defaults
+MAXWIDTH=-1
+
+while [ $# -gt 0 ]; do
+	case $1 in
+		-m|--maxwidth)
+			shift
+			if [ $# -lt 1 ]; then
+				echo "ERROR: --maxwidth requires an argument"
+				exit 1
+			fi
+			MAXWIDTH=$1
+			shift
+			if echo $MAXWIDTH | egrep -vq '[0-9]+'; then
+				echo "ERROR: MAXWIDTH must be a non-negative integer"
+				exit 1
+			elif [ $MAXWIDTH -le 3 ]; then
+				echo "ERROR: MAXWIDTH must be at least 4"
+				exit 1
+			fi
+			;;
+		*)
+			echo "ERROR: Unsupported option"
+			exit 1
+			;;
+	esac
+done
+
 title_error="Unknown Title"
 artist_error="Unknown Artist"
 
@@ -133,18 +163,19 @@ done
 # logic for if current_player = '' is on the other side
 echo -n $current_player > /tmp/polybar-player-current
 
-# Only output the suffix if there's not much space
-# don't force this check to happen if this script doesn't exist
-if [ -f $HOME/.config/scripts/islandscape.sh ] \
-   && ! $HOME/.config/scripts/islandscape.sh; then
-	echo "   $suffix"
+# Don't introduce a trailing - if there's no artist
+# Don't include suffix until after comparing to MAXWIDTH
+# (because it has ANSI codes in it)
+if echo $artist | egrep -q '^[ \t]*$' \
+	|| echo $option | grep -q 'noartist';
+then
+	out="$title"
 else
-	# Don't introduce a trailing - if there's no artist
-	if echo $artist | egrep -q '^[ \t]*$' \
-		|| echo $option | grep -q 'noartist';
-	then
-		echo "  $title     $suffix"
-	else
-		echo "  $title  -  $artist     $suffix"
-	fi
+	out="$title  -  $artist"
+fi
+if [ $MAXWIDTH -ne -1 ] && [ $(echo "$out" | wc -m) -gt $MAXWIDTH ]; then
+	echo "  $(echo "$out" \
+		| head -c $(echo "$MAXWIDTH - 3" | bc -l))...     $suffix"
+else
+	echo "  $out     $suffix"
 fi
