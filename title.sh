@@ -34,6 +34,9 @@ while [ $# -gt 0 ]; do
 			if echo $MAXWIDTH | egrep -vq '[0-9]+'; then
 				echo "ERROR: MAXWIDTH must be a non-negative integer"
 				exit 1
+			elif [ $MAXWIDTH -eq 0 ] || [ $MAXWIDTH -eq -1 ]; then
+				# This is OK, they are special values
+				:
 			elif [ $MAXWIDTH -le 3 ]; then
 				echo "ERROR: MAXWIDTH must be at least 4"
 				exit 1
@@ -173,7 +176,9 @@ then
 else
 	out="$title  -  $artist"
 fi
-if [ $MAXWIDTH -ne -1 ] && [ $(echo "$out" | wc -m) -gt $MAXWIDTH ]; then
+if [ $MAXWIDTH -eq 0 ]; then
+	echo "  $suffix"
+elif [ $MAXWIDTH -ne -1 ] && [ $(echo "$out" | wc -m) -gt $MAXWIDTH ]; then
 	echo "  $(echo "$out" \
 		| head -c $(echo "$MAXWIDTH - 3" | bc -l))...     $suffix"
 else
