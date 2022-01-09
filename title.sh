@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+mkdir -p /tmp/polybar-player
+
 # Handle command line options
 
 ## Defaults
-MAXWIDTH=-1
+maxwidth=-1
+pushed_metadata_players=""
 
 while [ $# -gt 0 ]; do
 	case $1 in
@@ -29,18 +32,27 @@ while [ $# -gt 0 ]; do
 				echo "ERROR: --maxwidth requires an argument"
 				exit 1
 			fi
-			MAXWIDTH=$1
+			maxwidth=$1
 			shift
-			if echo $MAXWIDTH | egrep -vq '[0-9]+'; then
-				echo "ERROR: MAXWIDTH must be a non-negative integer"
+			if echo $maxwidth | egrep -vq '[0-9]+'; then
+				echo "ERROR: maxwidth must be a non-negative integer"
 				exit 1
-			elif [ $MAXWIDTH -eq 0 ] || [ $MAXWIDTH -eq -1 ]; then
+			elif [ $maxwidth -eq 0 ] || [ $maxwidth -eq -1 ]; then
 				# This is OK, they are special values
 				:
-			elif [ $MAXWIDTH -le 3 ]; then
-				echo "ERROR: MAXWIDTH must be at least 4"
+			elif [ $maxwidth -le 3 ]; then
+				echo "ERROR: maxwidth must be at least 4"
 				exit 1
 			fi
+			;;
+		--use-pushed-metadata)
+			shift
+			if [ $# -lt 1 ]; then
+				echo "ERROR: --use-pushed-metadata requires an argument"
+				exit 1
+			fi
+			pushed_metadata_players="$pushed_metadata_players $1"
+			shift
 			;;
 		*)
 			echo "ERROR: Unsupported option"
@@ -79,8 +91,8 @@ vlc:VLC::
 
 found_currently_playing=0
 
-if [ -f /tmp/polybar-player-current ]; then
-	current_player=$(cat /tmp/polybar-player-current)
+if [ -f /tmp/polybar-player/current ]; then
+	current_player=$(cat /tmp/polybar-player/current)
 else
 	current_player=''
 fi
@@ -109,10 +121,24 @@ set_from_map() { # takes $1: map, $2 thing to match on
 		fi
 	done
 }
+get_player_attribute() { # takes $1: player, $2 attribute
+	if echo "$pushed_metadata_players" | grep -q "$1"; then
+		cat "/tmp/polybar-player/$1-$2" 2>/dev/null
+		return $?
+	else
+		if [ "$2" = "title" ] || [ "$2" = "artist" ]; then
+			playerctl -p $1 metadata $2
+			return $?
+		else
+			playerctl -p $1 $2
+			return $?
+		fi
+	fi
+}
 
 for player in $players
 do
-	if [ $(playerctl -p $player status) = 'Playing' ]; then
+	if [ "$(get_player_attribute $player status)" = 'Playing' ]; then
 		found_currently_playing=1
 	else
 		if [ $found_currently_playing -eq 1 ]; then
@@ -120,15 +146,14 @@ do
 			continue
 		fi
 	fi
+	title="$(get_player_attribute $player title)"
+	[ $? -ne 0 ] && title=$title_error
 
-	title=$( { playerctl -p $player metadata title; } 2>/dev/null )
-	if [ $? -ne 0 ]; then
-	    title=$title_error
-	fi
+	artist="$(get_player_attribute $player artist)"
+	[ $? -ne 0 ] && artist=$artist_error
 
-	artist=$( { playerctl -p $player metadata artist; } 2>/dev/null )
-	if [ $? -ne 0 ]; then
-	    artist=$artist_error
+	if [ "$title" = "$title_error" ] && [ "$artist" = "$artist_error" ]; then
+	    continue
 	fi
 
 	url=''
@@ -142,14 +167,10 @@ do
 			url=$(lz4jsoncat $HOME/.mozilla/firefox/*.default-release/sessionstore-backups/recovery.jsonlz4 \
 				| jq "$(echo '.windows[] | .tabs[] | .entries[] ' \
 					'| select(.title != null) | select(.title ' \
-					'| contains("'"$(playerctl -p $player metadata title)"'")) ' \
+					'| contains("'"$title"'")) ' \
 					'| .url')" 2>/dev/null \
 				| sed 's/^"//;s/"$//')
 		fi
-	fi
-
-	if [ "$title" = "$title_error" ] && [ "$artist" = "$artist_error" ]; then
-	    continue
 	fi
 
 	current_player=$player
@@ -164,10 +185,10 @@ done
 
 # write the player to a temp file for the play-pause script
 # logic for if current_player = '' is on the other side
-echo -n $current_player > /tmp/polybar-player-current
+echo -n $current_player > /tmp/polybar-player/current
 
 # Don't introduce a trailing - if there's no artist
-# Don't include suffix until after comparing to MAXWIDTH
+# Don't include suffix until after comparing to maxwidth
 # (because it has ANSI codes in it)
 if echo $artist | egrep -q '^[ \t]*$' \
 	|| echo $option | grep -q 'noartist';
@@ -176,11 +197,11 @@ then
 else
 	out="$title  -  $artist"
 fi
-if [ $MAXWIDTH -eq 0 ]; then
+if [ $maxwidth -eq 0 ]; then
 	echo "  $suffix"
-elif [ $MAXWIDTH -ne -1 ] && [ $(echo "$out" | wc -m) -gt $MAXWIDTH ]; then
+elif [ $maxwidth -ne -1 ] && [ $(echo "$out" | wc -m) -gt $maxwidth ]; then
 	echo "  $(echo "$out" \
-		| head -c $(echo "$MAXWIDTH - 3" | bc -l))...     $suffix"
+		| head -c $(echo "$maxwidth - 3" | bc -l))...     $suffix"
 else
 	echo "  $out     $suffix"
 fi
