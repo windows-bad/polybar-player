@@ -122,7 +122,7 @@ set_from_map() { # takes $1: map, $2 thing to match on
 	done
 }
 get_player_attribute() { # takes $1: player, $2 attribute
-	if echo "$pushed_metadata_players" | grep -q "$1"; then
+	if echo "$pushed_metadata_players" | grep -q "$1\$"; then
 		cat "/tmp/polybar-player/$1-$2" 2>/dev/null
 		return $?
 	else
