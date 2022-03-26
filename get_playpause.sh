@@ -16,17 +16,40 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-if [ -f /tmp/polybar-player/current ]; then
-	args="-p $(cat /tmp/polybar-player/current)"
-else
-	args=""
-fi
+pushed_metadata_players=""
 
-case "$(playerctl $args status)" in
-"Playing")
-	echo "    "
-	;;
-"Paused")
-	echo "    "
-	;;
-esac
+while [ $# -gt 0 ]; do
+	case $1 in
+		--use-pushed-metadata)
+			shift
+			if [ $# -lt 1 ]; then
+				echo "ERROR: --use-pushed-metadata requires an argument"
+				exit 1
+			fi
+			pushed_metadata_players="$pushed_metadata_players $1"
+			shift
+			;;
+		*)
+			echo "ERROR: Unsupported option"
+			exit 1
+			;;
+	esac
+done
+
+. "$(dirname "$0")/lib.sh"
+if test -f /tmp/polybar-player/current; then
+	player="$(cat /tmp/polybar-player/current)"
+	case "$(get_player_attribute $player status)" in
+		"Playing")
+			echo "    "
+			;;
+		"Paused")
+			echo "    "
+			;;
+		*)
+			echo "    X"
+			;;
+	esac
+else
+	echo "    X"
+fi
