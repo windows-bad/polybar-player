@@ -64,6 +64,7 @@ done
 title_error="Unknown Title"
 artist_error="Unknown Artist"
 
+. "$(dirname "$0")/lib.sh"
 
 # dash has no arrays but i NEEED SPEEED
 
@@ -120,20 +121,6 @@ set_from_map() { # takes $1: map, $2 thing to match on
 			break
 		fi
 	done
-}
-get_player_attribute() { # takes $1: player, $2 attribute
-	if echo "$pushed_metadata_players" | grep -q "$1\$"; then
-		cat "/tmp/polybar-player/$1-$2" 2>/dev/null
-		return $?
-	else
-		if [ "$2" = "title" ] || [ "$2" = "artist" ]; then
-			playerctl -p $1 metadata $2
-			return $?
-		else
-			playerctl -p $1 $2
-			return $?
-		fi
-	fi
 }
 
 for player in $players
