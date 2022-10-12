@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
 			fi
 			maxwidth=$1
 			shift
-			if echo $maxwidth | egrep -vq '[0-9]+'; then
+			if echo $maxwidth | grep -Evq '[0-9]+'; then
 				echo "ERROR: maxwidth must be a non-negative integer"
 				exit 1
 			elif [ $maxwidth -eq 0 ] || [ $maxwidth -eq -1 ]; then
@@ -113,7 +113,7 @@ set_from_map() { # takes $1: map, $2 thing to match on
 		icon=$(  echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\2/')
 		sedcmd=$(echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\3/')
 		option=$(echo $map | sed 's/^\(.*\):\(.*\):\(.*\):\(.*\)/\4/')
-		if echo $2 | egrep -q "$regex"; then
+		if echo $2 | grep -Eq "$regex"; then
 			suffix=$icon
 			if ! [ "$sedcmd" = '' ]; then
 				title=$(echo $title | sed "$sedcmd")
@@ -177,7 +177,7 @@ echo -n $current_player > /tmp/polybar-player/current
 # Don't introduce a trailing - if there's no artist
 # Don't include suffix until after comparing to maxwidth
 # (because it has ANSI codes in it)
-if echo $artist | egrep -q '^[ \t]*$' \
+if echo $artist | grep -Eq '^[ \t]*$' \
 	|| echo $option | grep -q 'noartist';
 then
 	out="$title"
