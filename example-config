@@ -19,26 +19,26 @@ font-2 = "Font Awesome 5 Free:style=Regular:pixelsize=18;8"
 type = custom/script
 exec = $HOME/.config/polybar/player/title.sh
 format = "    <label>    "
-exec-if = playerctl -l 2>&1 | egrep -vq 'No players'
+exec-if = playerctl -l 2>&1 | grep -Evq 'No players'
 interval = 0.5
 [module/player-back]
 type = custom/script
 exec = $HOME/.config/polybar/player/null.sh
-exec-if = playerctl -l 2>&1 | egrep -vq 'No players'
+exec-if = playerctl -l 2>&1 | grep -Evq 'No players'
 click-left = playerctl previous
 format = "        "
 interval = 0.5
 [module/player-pause]
 type = custom/script
 exec = $HOME/.config/polybar/player/get_playpause.sh
-exec-if = playerctl -l 2>&1 | egrep -vq 'No players'
+exec-if = playerctl -l 2>&1 | grep -Evq 'No players'
 click-left = $HOME/.config/polybar/player/toggle.sh
 format = "    <label>    "
 interval = 0.5
 [module/player-next]
 type = custom/script
 exec = $HOME/.config/polybar/player/null.sh
-exec-if = playerctl -l 2>&1 | egrep -vq 'No players'
+exec-if = playerctl -l 2>&1 | grep -Evq 'No players'
 click-left = playerctl next
 format = "        "
 interval = 0.5
