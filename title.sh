@@ -85,6 +85,7 @@ regex_title_mappings="
 
 regex_player_mappings="
 spotify:%{F#50fa7b}%{F-}::
+mpv:%{F#bd93f9}%{F-}::
 firefox:::
 chromium:Brave::
 vlc:VLC::
