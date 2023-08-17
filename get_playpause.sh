@@ -43,7 +43,7 @@ if test -f /tmp/polybar-player/current; then
 		"Playing")
 			echo "    "
 			;;
-		"Paused")
+		"Paused"|Stopped)
 			echo "    "
 			;;
 		*)

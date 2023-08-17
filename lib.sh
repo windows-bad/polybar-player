@@ -6,10 +6,10 @@ get_player_attribute() { # takes $1: player, $2 attribute
 		return $?
 	else
 		if [ "$2" = "title" ] || [ "$2" = "artist" ]; then
-			playerctl -p $1 metadata $2
+			playerctl -p $1 metadata $2 2>/dev/null
 			return $?
 		else
-			playerctl -p $1 $2
+			playerctl -p $1 $2 2>/dev/null
 			return $?
 		fi
 	fi
