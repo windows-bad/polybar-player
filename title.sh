@@ -16,7 +16,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-mkdir -p /tmp/polybar-player
+# Do this as the `player` group if we are a member.
+# This allows for simultaneous users to see player information
+
+
+#if groups | grep -Eq '(^| )player( |$)'; then
+if :; then
+	(
+		umask 002
+		sg player 'mkdir /tmp/polybar-player 2>/dev/null && chmod g+s /tmp/polybar-player'
+	)
+else
+	mkdir -p /tmp/polybar-player
+fi
 
 # Handle command line options
 
