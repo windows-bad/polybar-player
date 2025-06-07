@@ -20,11 +20,9 @@
 # This allows for simultaneous users to see player information
 
 
-#if groups | grep -Eq '(^| )player( |$)'; then
-if :; then
+if groups | grep -Eq '(^| )player( |$)'; then
 	(
-		umask 002
-		sg player 'mkdir /tmp/polybar-player 2>/dev/null && chmod g+s /tmp/polybar-player'
+		sg player 'umask 002 && mkdir /tmp/polybar-player 2>/dev/null && chmod g+s /tmp/polybar-player'
 	)
 else
 	mkdir -p /tmp/polybar-player
@@ -112,8 +110,7 @@ else
 fi
 
 # we want to process the current player last for a smooth experience
-# sadly -z is a GNUism but oh well
-players=$(playerctl -l | sed -z "s/\(.*\)\($current_player\n\)\(.*\)/\1\3\2/")
+players=$(playerctl -l | perl -pe 'BEGIN{undef $/;}''s/(.*)('"$current_player"'\n)(.*)/$1$3$2/smg')
 
 set_from_map() { # takes $1: map, $2 thing to match on
 
@@ -201,7 +198,7 @@ if [ $maxwidth -eq 0 ]; then
 	echo "  $suffix"
 elif [ $maxwidth -ne -1 ] && [ $(echo "$out" | wc -m) -gt $maxwidth ]; then
 	echo "  $(echo "$out" \
-		| head -c $(echo "$maxwidth - 3" | bc -l))...     $suffix"
+		| cut -c 1-$(echo "$maxwidth - 3" | bc -l))...     $suffix"
 else
 	echo "  $out     $suffix"
 fi
